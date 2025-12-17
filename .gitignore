@@ -1,0 +1,7 @@
+**/build/
+**/out/
+.doc/
+STM32CubeIDE/Debug/
+st-link_gdbserver_log.txt
+
+

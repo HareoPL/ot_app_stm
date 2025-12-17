@@ -1,0 +1,12 @@
+{
+    "cortex-debug.openocdPath": "C:\\.Programy\\OpenOCD\\bin\\openocd.exe",
+    "files.associations": {
+        "*.h": "c",
+        "*.c": "c"
+    },
+    // "C_Cpp.default.compilerPath": "c:\\.Programy\\Arm GNU Toolchain arm-none-eabi\\13.2 Rel1\\bin\\arm-none-eabi-gcc.exe",
+    "C_Cpp.errorSquiggles": "disabled",
+    //"cmake.buildDirectory": "${workspaceFolder}/out/App",
+    //"cmake.sourceDirectory": "C:/.Code/STM/MyProjects/H750_vsc/src",
+    // "cortex-debug.armToolchainPath": "null"
+}

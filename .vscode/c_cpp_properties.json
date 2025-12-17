@@ -1,0 +1,21 @@
+{
+    "configurations": [
+        {
+            "name": "Win32",
+            "includePath": [
+                "${workspaceFolder}/**"
+            ],
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE",
+                "STM32H750xx",
+                "USE_HAL_DRIVER"
+            ],
+            "cStandard": "c11"
+            // "compilerPath": "C:\\.Programy\\Arm GNU Toolchain arm-none-eabi\\13.2 Rel1\\bin\\arm-none-eabi-gcc.exe"
+
+        }
+    ],
+    "version": 4
+}
