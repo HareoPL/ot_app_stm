@@ -49,7 +49,7 @@ extern void vPortSetupTimerInterrupt(void);
 /* Private includes -----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "app_bsp.h"
-
+#include "hro_utils.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -117,7 +117,7 @@ static uint32_t lowPowerTimeDiffRemaining = 0;
 static const osThreadAttr_t WpanTask_attributes = {
   .name         = "Wpan Task",
   .priority     = TASK_PRIO_WPAN,
-  .stack_size   = TASK_STACK_SIZE_WPAN,
+ .stack_size   = TASK_STACK_SIZE_WPAN,
   .attr_bits    = TASK_DEFAULT_ATTR_BITS,
   .cb_mem       = TASK_DEFAULT_CB_MEM,
   .cb_size      = TASK_DEFAULT_CB_SIZE,
@@ -447,6 +447,8 @@ static void Wpan_Task_Entry(void* lArgument)
       osMutexRelease(LinkLayerMutex);
     }
 #endif
+    
+  UTILS_RTOS_CHECK_FREE_STACK();
 
   }
 }
