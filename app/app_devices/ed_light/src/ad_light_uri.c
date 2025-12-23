@@ -119,7 +119,7 @@ void ad_light_uri_light_rgb_CoreHandle(void *aContext, otMessage *aMessage, cons
 }
 
 // max uris:            OTAPP_PAIRED_URI_MAX
-// max lengh uri name:  OTAPP_COAP_URI_MAX_LENGHT
+// max lengh uri name:  OTAPP_URI_MAX_NAME_LENGHT
 static otapp_coap_uri_t ad_light_uri[] = {   
     {OTAPP_LIGHTING_ON_OFF,  {"light/on_off", ad_light_uri_light_on_off_CoreHandle, NULL, NULL},},
     {OTAPP_LIGHTING_DIMM,    {"light/dimm", ad_light_uri_light_dimm_CoreHandle, NULL, NULL},},

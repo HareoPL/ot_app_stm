@@ -23,6 +23,7 @@
 // nvs is initialize in otapp_cli_init(), ot_app.c
 
 #include "ot_app_port_nvs.h"
+#include "hro_utils.h"
 #include "stdio.h"
 #include <string.h>
 
@@ -153,21 +154,22 @@ static char *ot_app_nvs_keyMake(char *buff, uint8_t keyId)
 
     int8_t ot_app_nvs_init(void)
     {
-
+        return 0;
     }
 
     int8_t ot_app_nvs_saveString(const char *inData, const uint8_t keyId)
     {
-
+        return 0;
     }
 
     int8_t ot_app_nvs_readString(char *outBuff, uint8_t outBuffSize, const uint8_t keyId) 
     {
-
+        return 0;
     }
 
     void ot_app_nvs_test()
     {
-        
+        UNUSED(ot_app_nvs_keyMake);
+        UNUSED(NAMESPACE);
     }
 #endif

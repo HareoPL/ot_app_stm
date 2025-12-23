@@ -20,7 +20,7 @@
  * 
  */
 #include "ad_light_control.h"
-#include "ws2812b_fx.h"
+// #include "ws2812b_fx.h"
 
 #define AD_LIGHT_CTR_COLOR 3 // RGB
 
@@ -43,74 +43,97 @@ static ad_light_ctr_t ctr;
 
 static uint8_t *ad_light_ctr_rgbScaling(uint32_t dimValue)
 {
-    for (uint8_t i = 0; i < AD_LIGHT_CTR_COLOR; i++)
-    {
-        ctr.RGB_dim[i] = AD_LIGHT_CTR_BRIGHTNESS_FORM(ctr. RGB[i], dimValue);
-    }
-    return ctr.RGB_dim;
+    // for (uint8_t i = 0; i < AD_LIGHT_CTR_COLOR; i++)
+    // {
+    //     ctr.RGB_dim[i] = AD_LIGHT_CTR_BRIGHTNESS_FORM(ctr. RGB[i], dimValue);
+    // }
+    // return ctr.RGB_dim;
+
+	UNUSED(dimValue);
+	return NULL;
 }
 
 static void ad_light_ctr_dimSave(uint32_t dimValue)
 {
-    ctr.dim = dimValue;
+    // ctr.dim = dimValue;
+	UNUSED(dimValue);
 }
 
 static void ad_light_ctr_colorSave(uint8_t r, uint8_t g, uint8_t b)
 {
-    ctr.RGB[AD_LIGHT_ID_R] = r;
-    ctr.RGB[AD_LIGHT_ID_G] = g;
-    ctr.RGB[AD_LIGHT_ID_B] = b;
+    // ctr.RGB[AD_LIGHT_ID_R] = r;
+    // ctr.RGB[AD_LIGHT_ID_G] = g;
+    // ctr.RGB[AD_LIGHT_ID_B] = b;
+	UNUSED(r);
+	UNUSED(g);
+	UNUSED(b);
 }
 
 void ad_light_ctr_onOff(uint32_t ledState)
 {
-    if(ledState)
-    {
-        if(ctr.dim == 0)
-        {
-            WS2812BFX_ForceAllColor(0, ctr.RGB[AD_LIGHT_ID_R], ctr.RGB[AD_LIGHT_ID_G], ctr.RGB[AD_LIGHT_ID_B]);
-        }
-        else
-        {
-            WS2812BFX_ForceAllColor(0, ctr.RGB_dim[AD_LIGHT_ID_R], ctr.RGB_dim[AD_LIGHT_ID_G], ctr.RGB_dim[AD_LIGHT_ID_B]);
-        }
-    }else
-    {
-        WS2812BFX_ForceAllColor(0, 0, 0, 0);
-    }
+    // if(ledState)
+    // {
+    //     if(ctr.dim == 0)
+    //     {
+    //         WS2812BFX_ForceAllColor(0, ctr.RGB[AD_LIGHT_ID_R], ctr.RGB[AD_LIGHT_ID_G], ctr.RGB[AD_LIGHT_ID_B]);
+    //     }
+    //     else
+    //     {
+    //         WS2812BFX_ForceAllColor(0, ctr.RGB_dim[AD_LIGHT_ID_R], ctr.RGB_dim[AD_LIGHT_ID_G], ctr.RGB_dim[AD_LIGHT_ID_B]);
+    //     }
+    // }else
+    // {
+    //     WS2812BFX_ForceAllColor(0, 0, 0, 0);
+    // }
+	UNUSED(ledState);
 }
 
 void ad_light_ctr_dimSet(uint32_t dimValue)
 {
-    uint8_t *rgb;
+    // uint8_t *rgb;
 
-    ad_light_ctr_dimSave(dimValue);  
-    rgb = ad_light_ctr_rgbScaling(dimValue);  
+    // ad_light_ctr_dimSave(dimValue);  
+    // rgb = ad_light_ctr_rgbScaling(dimValue);  
 
-    WS2812BFX_ForceAllColor(0, rgb[AD_LIGHT_ID_R], rgb[AD_LIGHT_ID_G], rgb[AD_LIGHT_ID_B]);
+    // WS2812BFX_ForceAllColor(0, rgb[AD_LIGHT_ID_R], rgb[AD_LIGHT_ID_G], rgb[AD_LIGHT_ID_B]);
+
+	UNUSED(dimValue);
 }
 
 
 void ad_light_ctr_colorSet(uint8_t r, uint8_t g, uint8_t b)
 {   
-    ad_light_ctr_colorSave(r, g, b);
+    // ad_light_ctr_colorSave(r, g, b);
 
-    if(ctr.dim != 0)
-    {
-        ad_light_ctr_dimSet(ctr.dim);
-    }
-    else
-    {
-        WS2812BFX_ForceAllColor(0, r, g, b);
-    }       
+    // if(ctr.dim != 0)
+    // {
+    //     ad_light_ctr_dimSet(ctr.dim);
+    // }
+    // else
+    // {
+    //     WS2812BFX_ForceAllColor(0, r, g, b);
+    // }
+
+	UNUSED(r);
+		UNUSED(g);
+		UNUSED(b);
 }
 
 void ad_light_ctr_init(ot_app_devDrv_t *devDrv)
 {
-    if(devDrv == NULL) return;
-    drv = devDrv;
+    // if(devDrv == NULL) return;
+    // drv = devDrv;
 
-    // todo load latest settings
-    // color, dim, 
-    ad_light_ctr_colorSave(0, 0, 5);
+    // // todo load latest settings
+    // // color, dim, 
+    // ad_light_ctr_colorSave(0, 0, 5);
+
+	UNUSED(devDrv);
+
+	UNUSED(drv);
+	UNUSED(ctr);
+	UNUSED(ad_light_ctr_rgbScaling);
+	UNUSED(ad_light_ctr_dimSave);
+	UNUSED(ad_light_ctr_colorSave);
+
 }

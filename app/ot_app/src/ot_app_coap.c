@@ -150,7 +150,7 @@ void otapp_coap_sendResponse(otMessage *requestMessage, const otMessageInfo *aMe
         }
 
         // Create ACK for GET query
-        error = otCoapMessageInitResponse(responseMessage, requestMessage, OT_COAP_TYPE_ACKNOWLEDGMENT, responseCode);
+        error = otCoapMessageInitResponse(responseMessage, requestMessage, OT_COAP_TYPE_CONFIRMABLE, responseCode);
         if (error != OT_ERROR_NONE) { goto exit; }
 
         // // Add marker payload's and payload
@@ -174,35 +174,48 @@ void otapp_coap_sendResponse(otMessage *requestMessage, const otMessageInfo *aMe
         }
 
         // Create ACK for GET query
-        error = otCoapMessageInitResponse(responseMessage, requestMessage, OT_COAP_TYPE_ACKNOWLEDGMENT, responseCode);
+        error = otCoapMessageInitResponse(responseMessage, requestMessage, OT_COAP_TYPE_CONFIRMABLE, responseCode);
         if (error != OT_ERROR_NONE)  { goto exit; }
     
     }
     else
     {
         OTAPP_PRINTF(TAG, "CoAP method not supported: %d\n", requestCode);
-        error = OT_ERROR_NOT_IMPLEMENTED;
-        return;
+        responseCode = OT_COAP_CODE_METHOD_NOT_ALLOWED;  // 4.05
+        
+        responseMessage = otCoapNewMessage(otapp_getOpenThreadInstancePtr(), NULL);
+        if (responseMessage == NULL) {
+            error = OT_ERROR_NO_BUFS;
+            goto exit;
+        }
+        error = otCoapMessageInitResponse(responseMessage, requestMessage, OT_COAP_TYPE_ACKNOWLEDGMENT, responseCode);
+        if (error != OT_ERROR_NONE) goto exit;
+        
+        error = otCoapSendResponse(otapp_getOpenThreadInstancePtr(), responseMessage, aMessageInfo);
+        if (error != OT_ERROR_NONE) goto exit;
+        
+        OTAPP_PRINTF(TAG, "CoAP error response sent.\n");
+        responseMessage = NULL;  // OpenThread przejmuje ownership
+        goto exit;
     }
 
     // send response with default parameters
-    error = otCoapSendResponseWithParameters(otapp_getOpenThreadInstancePtr(), responseMessage, aMessageInfo, NULL);
-    if (error != OT_ERROR_NONE)
+    // error = otCoapSendResponseWithParameters(otapp_getOpenThreadInstancePtr(), responseMessage, aMessageInfo, NULL);
+    error = otCoapSendResponse(otapp_getOpenThreadInstancePtr(), responseMessage, aMessageInfo);
+    if (error == OT_ERROR_NONE)
     {
-        goto exit;
-    }else
-    {
-        OTAPP_PRINTF(TAG, "CoAP response sent.\n");  
+        OTAPP_PRINTF(TAG, "CoAP response sent.\n");
+        responseMessage = NULL; 
     }
 
 exit:
+    if (responseMessage != NULL)
+    {
+        otMessageFree(responseMessage);
+    }
     if (error != OT_ERROR_NONE)
     {
         OTAPP_PRINTF(TAG, "CoAP error: %d (%s)\n", error, otThreadErrorToString(error));
-        if (responseMessage != NULL)
-        {
-            otMessageFree(responseMessage);
-        }
     }
 }
 
@@ -466,19 +479,17 @@ int8_t otapp_coap_init(ot_app_devDrv_t *devDriver)
     }
     // init coap handler
     // otCoapSetDefaultHandler(otapp_getOpenThreadInstancePtr(), otapp_coap_requestHandler, NULL);
-        error = otapp_coap_initCoapResource(otapp_coap_uriDefault, OTAPP_COAP_URI_DEFAULT_SIZE);
-    if (error != OTAPP_COAP_URI_OK)
+
+    if (otapp_coap_initCoapResource(otapp_coap_uriDefault, OTAPP_COAP_URI_DEFAULT_SIZE) != OTAPP_COAP_URI_OK)
     {
        return OTAPP_COAP_URI_ERROR;
     }
 
-    
-    otapp_coap_initCoapResource(devDriver->uriGetList_clb(), devDriver->uriGetListSize);
-    // error = otapp_coap_initCoapResource(devDriver->uriGetList_clb(), devDriver->uriGetListSize);
-    // if (error != OTAPP_COAP_URI_OK)
-    // {
-    //    return OTAPP_COAP_URI_ERROR;
-    // }
+    if (otapp_coap_initCoapResource(devDriver->uriGetList_clb(), devDriver->uriGetListSize) != OTAPP_COAP_URI_OK)
+	{
+	   return OTAPP_COAP_URI_ERROR;
+	}
+
 
     return OTAPP_COAP_URI_OK;
 }

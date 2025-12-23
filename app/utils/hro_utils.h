@@ -26,6 +26,10 @@
 #include "ot_app_port_rtos.h"
 #include <stdio.h>
 
+#ifdef STM_PLATFORM		
+    #include "stm32_adv_trace.h"
+#endif
+
 #define HRO_LOG_ENABLE
 
 #ifndef UNIT_TEST    
@@ -51,7 +55,11 @@
 #endif
 
 #ifdef HRO_LOG_ENABLE
-    #define HRO_PRINTF(fmt, ...)        printf("$$ " fmt" &&--> " __VA_ARGS__)
+    #ifdef STM_PLATFORM		
+        #define HRO_PRINTF(fmt, ...)        UTIL_ADV_TRACE_FSend("$$ " fmt" &&--> " __VA_ARGS__)
+    #elif
+        #define HRO_PRINTF(fmt, ...)        printf("$$ " fmt" &&--> " __VA_ARGS__)
+    #endif
 #else
     // logs disable
     #define HRO_PRINTF(fmt, ...)      ((void)0)
@@ -60,11 +68,19 @@
 
 #ifdef UTILS_ENABLE_CHECK_RTOS_FREE_STACK_ON_TASKS  
     #define UTILS_RTOS_CHECK_FREE_STACK() \
-        do{ \
-            const char *task_name = pcTaskGetName(NULL); \
-            UBaseType_t stack_free = uxTaskGetStackHighWaterMark(NULL); \
-            HRO_PRINTF("", "task %s free stack: %ld ", task_name, (unsigned long)stack_free); \
-        }while(0)
+        do {                                                              \
+        const char *task_name = pcTaskGetName(NULL);                      \
+        UBaseType_t stack_free = uxTaskGetStackHighWaterMark(NULL);       \
+        size_t heap_free = xPortGetFreeHeapSize();                        \
+        size_t heap_min_free = xPortGetMinimumEverFreeHeapSize();         \
+        HRO_PRINTF("",                                                    \
+                   "task %s free stack: %lu words | heap free: %u B | "   \
+                   "heap min free: %u B\n",                               \
+                   task_name,                                             \
+                   (unsigned long)stack_free,                             \
+                   (unsigned int)heap_free,                               \
+                   (unsigned int)heap_min_free);                          \
+    } while (0)
 #else
     #define UTILS_RTOS_CHECK_FREE_STACK() do{}while(0)
 #endif 

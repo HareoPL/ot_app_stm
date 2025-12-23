@@ -247,9 +247,11 @@ int8_t otapp_init() //app init
 
     openThreadInstance = otapp_port_openthread_get_instance();
     
-    #ifdef ESP_PLATFORM    
-        otapp_cli_init();
-    #endif 
+	#ifdef ESP_PLATFORM
+		otapp_cli_init();
+	#else
+		otapp_network_init();
+	#endif
 
     otSetStateChangedCallback(otapp_getOpenThreadInstancePtr(),otapp_deviceStateChangedCallback, NULL);
     otapp_mutexBuf = xSemaphoreCreateMutex();
