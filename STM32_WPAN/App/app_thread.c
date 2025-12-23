@@ -133,6 +133,11 @@ static uint8_t PayloadRead[COAP_PAYLOAD_LENGTH]= {0};
 
 /* Functions Definition ------------------------------------------------------*/
 
+otInstance * APP_THREAD_GetInstance(void)
+{
+  return PtOpenThreadInstance;
+}
+
 void APP_THREAD_ProcessAlarm(void *argument)
 {
   UNUSED(argument);
