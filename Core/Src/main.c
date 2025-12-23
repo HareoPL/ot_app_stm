@@ -22,7 +22,10 @@
 #include "ot_app.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "ot_app.h"
+#include "ad_light.h"
 
+#define TAG "main "
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/

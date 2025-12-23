@@ -52,6 +52,8 @@
 #include OPENTHREAD_CONFIG_FILE
 #include "stm32_lpm_if.h"
 
+#include "ot_app.h"
+#include "ad_light.h"
 /* Private includes -----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "app_bsp.h"
@@ -80,8 +82,8 @@
 /* USER CODE END PM */
 
 /* Private function prototypes -----------------------------------------------*/
-static void APP_THREAD_DeviceConfig(void);
-static void APP_THREAD_StateNotif(uint32_t NotifFlags, void *pContext);
+//static void APP_THREAD_DeviceConfig(void);
+//static void APP_THREAD_StateNotif(uint32_t NotifFlags, void *pContext);
 static void APP_THREAD_TraceError(const char * pMess, uint32_t ErrCode);
 
 #if (OT_CLI_USE == 1)
@@ -110,7 +112,7 @@ static void APP_THREAD_CoapRequestHandler(  void                * pContext,
 static void APP_THREAD_CoapSendDataResponse(otMessage           * pMessage,
                                             const otMessageInfo * pMessageInfo);
 
-static void APP_THREAD_InitPayloadWrite(void);
+//static void APP_THREAD_InitPayloadWrite(void);
 static bool APP_THREAD_CheckMsgValidity(void);
 static void APP_THREAD_CoapDataRespHandler( void                * aContext,
                                             otMessage           * pMessage,
@@ -235,68 +237,69 @@ void Thread_Init(void)
  * @param  None
  * @retval None
  */
-static void APP_THREAD_DeviceConfig(void)
-{
-  otError error = OT_ERROR_NONE;
-  otNetworkKey networkKey = {{0xFF, 0xEE, 0xDD, 0xCC, 0xBB, 0xAA, 0x99, 0x88, 0x77, 0x66, 0x55, 0x44, 0x33, 0x22, 0x11, 0x00}};
 
-  error = otSetStateChangedCallback(PtOpenThreadInstance, APP_THREAD_StateNotif, NULL);
-  if (error != OT_ERROR_NONE)
-  {
-    APP_THREAD_Error(ERR_THREAD_SET_STATE_CB,error);
-  }
+// static void APP_THREAD_DeviceConfig(void)
+// {
+//   otError error = OT_ERROR_NONE;
+// //  otNetworkKey networkKey = {{0xFF, 0xEE, 0xDD, 0xCC, 0xBB, 0xAA, 0x99, 0x88, 0x77, 0x66, 0x55, 0x44, 0x33, 0x22, 0x11, 0x00}};
 
-  error = otPlatRadioSetCcaEnergyDetectThreshold(PtOpenThreadInstance, C_CCA_THRESHOLD);
-  if (error != OT_ERROR_NONE)
-  {
-    APP_THREAD_Error(ERR_THREAD_SET_THRESHOLD,error);
-  }
+//   error = otSetStateChangedCallback(PtOpenThreadInstance, APP_THREAD_StateNotif, NULL);
+//   if (error != OT_ERROR_NONE)
+//   {
+//     APP_THREAD_Error(ERR_THREAD_SET_STATE_CB,error);
+//   }
 
-  error = otLinkSetChannel(PtOpenThreadInstance, C_CHANNEL_NB);
-  if (error != OT_ERROR_NONE)
-  {
-    APP_THREAD_Error(ERR_THREAD_SET_CHANNEL,error);
-  }
+//   error = otPlatRadioSetCcaEnergyDetectThreshold(PtOpenThreadInstance, C_CCA_THRESHOLD);
+//   if (error != OT_ERROR_NONE)
+//   {
+//     APP_THREAD_Error(ERR_THREAD_SET_THRESHOLD,error);
+//   }
 
-  error = otLinkSetPanId(PtOpenThreadInstance, C_PANID);
-  if (error != OT_ERROR_NONE)
-  {
-    APP_THREAD_Error(ERR_THREAD_SET_PANID,error);
-  }
+//  error = otLinkSetChannel(PtOpenThreadInstance, C_CHANNEL_NB);
+//  if (error != OT_ERROR_NONE)
+//  {
+//    APP_THREAD_Error(ERR_THREAD_SET_CHANNEL,error);
+//  }
+//
+//  error = otLinkSetPanId(PtOpenThreadInstance, C_PANID);
+//  if (error != OT_ERROR_NONE)
+//  {
+//    APP_THREAD_Error(ERR_THREAD_SET_PANID,error);
+//  }
+//
+//  error = otThreadSetNetworkKey(PtOpenThreadInstance, &networkKey);
+//  if (error != OT_ERROR_NONE)
+//  {
+//    APP_THREAD_Error(ERR_THREAD_SET_NETWORK_KEY,error);
+//  }
 
-  error = otThreadSetNetworkKey(PtOpenThreadInstance, &networkKey);
-  if (error != OT_ERROR_NONE)
-  {
-    APP_THREAD_Error(ERR_THREAD_SET_NETWORK_KEY,error);
-  }
+//   otPlatRadioEnableSrcMatch(PtOpenThreadInstance, true);
 
-  otPlatRadioEnableSrcMatch(PtOpenThreadInstance, true);
+//   error = otIp6SetEnabled(PtOpenThreadInstance, true);
+//   if (error != OT_ERROR_NONE)
+//   {
+//     APP_THREAD_Error(ERR_THREAD_IPV6_ENABLE,error);
+//   }
+//   error = otThreadSetEnabled(PtOpenThreadInstance, true);
+//   if (error != OT_ERROR_NONE)
+//   {
+//     APP_THREAD_Error(ERR_THREAD_START,error);
+//   }
+//   /* USER CODE BEGIN DEVICECONFIG */
+//   /* Start the COAP server */
+//   error = otCoapStart(PtOpenThreadInstance, OT_DEFAULT_COAP_PORT);
+//   if (error != OT_ERROR_NONE)
+//   {
+//     APP_THREAD_Error(ERR_THREAD_COAP_START,error);
+//   }
 
-  error = otIp6SetEnabled(PtOpenThreadInstance, true);
-  if (error != OT_ERROR_NONE)
-  {
-    APP_THREAD_Error(ERR_THREAD_IPV6_ENABLE,error);
-  }
-  error = otThreadSetEnabled(PtOpenThreadInstance, true);
-  if (error != OT_ERROR_NONE)
-  {
-    APP_THREAD_Error(ERR_THREAD_START,error);
-  }
-  /* USER CODE BEGIN DEVICECONFIG */
-  /* Start the COAP server */
-  error = otCoapStart(PtOpenThreadInstance, OT_DEFAULT_COAP_PORT);
-  if (error != OT_ERROR_NONE)
-  {
-    APP_THREAD_Error(ERR_THREAD_COAP_START,error);
-  }
+//   /* Add COAP resources */
+//   otCoapAddResource(PtOpenThreadInstance, &OT_Ressource);
 
-  /* Add COAP resources */
-  otCoapAddResource(PtOpenThreadInstance, &OT_Ressource);
+//   APP_THREAD_InitPayloadWrite();
 
-  APP_THREAD_InitPayloadWrite();
-
-  /* USER CODE END DEVICECONFIG */
-}
+//   /* USER CODE END DEVICECONFIG */
+// }
 
 void APP_THREAD_Init( void )
 {
@@ -306,7 +309,10 @@ void APP_THREAD_Init( void )
 
   Thread_Init();
 
-  APP_THREAD_DeviceConfig();
+  ad_light_init("device1"); // Initialize light device with device name group "device1"
+  otapp_init();
+
+//   APP_THREAD_DeviceConfig();
 }
 
 /**
@@ -438,63 +444,63 @@ void APP_THREAD_Error(uint32_t ErrId, uint32_t ErrCode)
  *
  * @retval None
  */
-static void APP_THREAD_StateNotif(uint32_t NotifFlags, void *pContext)
-{
-  /* Prevent unused argument(s) compilation warning */
-  UNUSED(pContext);
-
-  /* USER CODE BEGIN APP_THREAD_STATENOTIF */
-
-  /* USER CODE END APP_THREAD_STATENOTIF */
-
-  if ((NotifFlags & (uint32_t)OT_CHANGED_THREAD_ROLE) == (uint32_t)OT_CHANGED_THREAD_ROLE)
-  {
-    switch (otThreadGetDeviceRole(PtOpenThreadInstance))
-    {
-      case OT_DEVICE_ROLE_DISABLED:
-          /* USER CODE BEGIN OT_DEVICE_ROLE_DISABLED */
-      	  APP_LED_OFF(LD2);
-          APP_LED_OFF(LD3);
-          /* USER CODE END OT_DEVICE_ROLE_DISABLED */
-          break;
-
-      case OT_DEVICE_ROLE_DETACHED:
-          /* USER CODE BEGIN OT_DEVICE_ROLE_DETACHED */
-          APP_LED_OFF(LD2);
-          APP_LED_OFF(LD3);
-          /* USER CODE END OT_DEVICE_ROLE_DETACHED */
-          break;
-
-      case OT_DEVICE_ROLE_CHILD:
-          /* USER CODE BEGIN OT_DEVICE_ROLE_CHILD */
-          APP_LED_OFF(LD2);
-          APP_LED_ON(LD3);
-          /* USER CODE END OT_DEVICE_ROLE_CHILD */
-          break;
-
-      case OT_DEVICE_ROLE_ROUTER :
-          /* USER CODE BEGIN OT_DEVICE_ROLE_ROUTER */
-          APP_LED_OFF(LD2);
-          APP_LED_ON(LD3);
-          /* USER CODE END OT_DEVICE_ROLE_ROUTER */
-          break;
-
-      case OT_DEVICE_ROLE_LEADER :
-          /* USER CODE BEGIN OT_DEVICE_ROLE_LEADER */
-          APP_LED_ON(LD2);
-          APP_LED_OFF(LD3);
-          /* USER CODE END OT_DEVICE_ROLE_LEADER */
-          break;
-
-      default:
-          /* USER CODE BEGIN DEFAULT */
-          APP_LED_OFF(LD2);
-          APP_LED_OFF(LD3);
-          /* USER CODE END DEFAULT */
-          break;
-    }
-  }
-}
+//static void APP_THREAD_StateNotif(uint32_t NotifFlags, void *pContext)
+//{
+//  /* Prevent unused argument(s) compilation warning */
+//  UNUSED(pContext);
+//
+//  /* USER CODE BEGIN APP_THREAD_STATENOTIF */
+//
+//  /* USER CODE END APP_THREAD_STATENOTIF */
+//
+//  if ((NotifFlags & (uint32_t)OT_CHANGED_THREAD_ROLE) == (uint32_t)OT_CHANGED_THREAD_ROLE)
+//  {
+//    switch (otThreadGetDeviceRole(PtOpenThreadInstance))
+//    {
+//      case OT_DEVICE_ROLE_DISABLED:
+//          /* USER CODE BEGIN OT_DEVICE_ROLE_DISABLED */
+//      	  APP_LED_OFF(LD2);
+//          APP_LED_OFF(LD3);
+//          /* USER CODE END OT_DEVICE_ROLE_DISABLED */
+//          break;
+//
+//      case OT_DEVICE_ROLE_DETACHED:
+//          /* USER CODE BEGIN OT_DEVICE_ROLE_DETACHED */
+//          APP_LED_OFF(LD2);
+//          APP_LED_OFF(LD3);
+//          /* USER CODE END OT_DEVICE_ROLE_DETACHED */
+//          break;
+//
+//      case OT_DEVICE_ROLE_CHILD:
+//          /* USER CODE BEGIN OT_DEVICE_ROLE_CHILD */
+//          APP_LED_OFF(LD2);
+//          APP_LED_ON(LD3);
+//          /* USER CODE END OT_DEVICE_ROLE_CHILD */
+//          break;
+//
+//      case OT_DEVICE_ROLE_ROUTER :
+//          /* USER CODE BEGIN OT_DEVICE_ROLE_ROUTER */
+//          APP_LED_OFF(LD2);
+//          APP_LED_ON(LD3);
+//          /* USER CODE END OT_DEVICE_ROLE_ROUTER */
+//          break;
+//
+//      case OT_DEVICE_ROLE_LEADER :
+//          /* USER CODE BEGIN OT_DEVICE_ROLE_LEADER */
+//          APP_LED_ON(LD2);
+//          APP_LED_OFF(LD3);
+//          /* USER CODE END OT_DEVICE_ROLE_LEADER */
+//          break;
+//
+//      default:
+//          /* USER CODE BEGIN DEFAULT */
+//          APP_LED_OFF(LD2);
+//          APP_LED_OFF(LD3);
+//          /* USER CODE END DEFAULT */
+//          break;
+//    }
+//  }
+//}
 
 #if (OT_CLI_USE == 1)
 /* OT CLI UART functions */
@@ -699,15 +705,15 @@ static void APP_THREAD_CoapSendDataResponse(otMessage  * pMessage, const otMessa
  * @param  None
  * @retval None
  */
-static void APP_THREAD_InitPayloadWrite(void)
-{
-  uint8_t i;
-  
-  for(i = 0; i < COAP_PAYLOAD_LENGTH; i++)
-  {
-    PayloadWrite[i] = 0xFF;
-  }
-}
+//static void APP_THREAD_InitPayloadWrite(void)
+//{
+//  uint8_t i;
+//
+//  for(i = 0; i < COAP_PAYLOAD_LENGTH; i++)
+//  {
+//    PayloadWrite[i] = 0xFF;
+//  }
+//}
 
 /**
  * @brief  Compare the message received versus the original message.
