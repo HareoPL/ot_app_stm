@@ -21,6 +21,13 @@
 #include "stm32wbaxx_ll_rng.h"
 #include "RTDebug.h"
 
+#include "ot_app.h"
+#include "cmsis_os2.h"
+#include "FreeRTOS.h"
+#include "timers.h"
+
+#define TAG "hw_rng "
+
 /*****************************************************************************/
 
 extern void Error_Handler(void);
@@ -78,6 +85,7 @@ static uint8_t hw_rng_pool_threshold = HW_RNG_POOL_DEFAULT_THRESHOLD;
 /*****************************************************************************/
 
 static void HW_RNG_WaitingClockSynchronization( void );
+static void HW_RNG_TimerStart(void);
 
 /*****************************************************************************/
 
@@ -86,6 +94,10 @@ void HW_RNG_Disable( void )
   SYSTEM_DEBUG_SIGNAL_SET(RNG_DISABLE);
 
   LL_RNG_Disable( RNG );
+  while(LL_RNG_IsEnabled(RNG)); // whait for RNGEN = 0
+
+  uint32_t timeout = 1000;
+  while((RNG->SR & (1 << 4)) && timeout--); // whait for BUSY = 0
 
   /* Disable RNG clocks */
   HW_RNG_DisableClock( 1 );
@@ -157,7 +169,9 @@ void HW_RNG_DisableClock( uint8_t user_mask )
 static void HW_RNG_WaitingClockSynchronization( void )
 {
   /* RNG busy flag is not available in STM32WBA5xxx */
-#if defined(STM32WBA52xx) || defined(STM32WBA54xx) || defined(STM32WBA55xx) || defined(STM32WBA5Mxx)  
+#if defined(STM32WBA52xx) || defined(STM32WBA54xx) || defined(STM32WBA55xx) || \
+    defined(STM32WBA5Mxx) || defined(STM32WBA62xx) || defined(STM32WBA63xx) || \
+    defined(STM32WBA64xx) || defined(STM32WBA65xx)
   volatile unsigned int cpt;
   
   for(cpt = 178 ; cpt!=0 ; --cpt);
@@ -221,8 +235,12 @@ static int HW_RNG_Run(HW_RNG_VAR_T* pv)
   UTILS_EXIT_CRITICAL_SECTION( );
 
   /* pool is full, disable the RNG and its RCC clock */
-  HW_RNG_Disable( );
-
+  // BUG, I think, RNG shouldn't be disable immediately after generated, because it may be needed for next using IMMEDIATELY
+  // TODO implementation of delayed HW_RNG_Disable. start freertos timer -> freertos timer in callback -> run suspended RNG_task  -> RNG_task - execute, disable RNG.
+  
+  // HW_RNG_Disable( ); // Here not disable but refresh freertos timmer 
+  HW_RNG_TimerStart(); // start counting to disable HW_RNG, if some process needs necessary use RNG, timer will be restart
+  
   /* Reset flag indicating that the RNG is ON */
   pv->run = FALSE;
   
@@ -344,38 +362,47 @@ int HW_RNG_Process( void )
 
 void HW_RNG_Init(void)
 {
-  HW_RNG_VAR_T* pv = &HW_RNG_var;
+ HW_RNG_VAR_T* pv = &HW_RNG_var;
 
-  SYSTEM_DEBUG_SIGNAL_SET(RNG_ENABLE);
+ // if RNG already is running, do nothing - you will avoid CONDRST reset and BUSY error
+ if (LL_RNG_IsEnabled(RNG) && (RNG->CR & RNG_CR_RNGEN))
+ {
+     return;
+ }
 
-  LL_RCC_SetRNGClockSource(LL_RCC_RNG_CLKSOURCE_HSI);
-  LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_RNG);
-  LL_RNG_Disable(RNG);
-  while(LL_RNG_IsEnabled(RNG));
- 
-  /* Recommended value for NIST compliance, refer to application note AN4230 */
-  /* Using LL macros to set these values is not convenient as it's split 
-     in 3 parts and need some bit polling at each step to check completion.
-     So, for efficiency, register direct access */
-  WRITE_REG(RNG->CR, RNG_CR_NIST_VALUE | RNG_CR_CONDRST | RNG_CED_DISABLE);
-  /* Recommended value for NIST compliance, refer to application note AN4230 */
- 
-  LL_RNG_DisableClkErrorDetect(RNG);
-  LL_RNG_DisableCondReset(RNG);
+ SYSTEM_DEBUG_SIGNAL_SET(RNG_ENABLE);
 
-#if !(defined(STM32WBA52xx) || defined(STM32WBA54xx) || defined(STM32WBA55xx) || defined(STM32WBA5Mxx)) 
-  while((RNG->SR & (1 << 4)));
-#endif 
-  
-  while(LL_RNG_IsEnabledCondReset(RNG));
+ LL_RCC_SetRNGClockSource(LL_RCC_RNG_CLKSOURCE_HSI);
+ LL_AHB2_GRP1_EnableClock(LL_AHB2_GRP1_PERIPH_RNG);
+ LL_RNG_Disable(RNG);
+ while(LL_RNG_IsEnabled(RNG));
 
-  LL_RNG_SetHealthConfig(RNG,RNG_HTCR_NIST_VALUE);
+ /* Recommended value for NIST compliance, refer to application note AN4230 */
+ /* Using LL macros to set these values is not convenient as it's split
+    in 3 parts and need some bit polling at each step to check completion.
+    So, for efficiency, register direct access */
+ WRITE_REG(RNG->CR, RNG_CR_NIST_VALUE | RNG_CR_CONDRST | RNG_CED_DISABLE);
+ /* Recommended value for NIST compliance, refer to application note AN4230 */
 
-  LL_RNG_Enable(RNG);
-  while(!LL_RNG_IsActiveFlag_DRDY(RNG)); /*wait for data to be ready*/
+ LL_RNG_DisableClkErrorDetect(RNG);
+ LL_RNG_DisableCondReset(RNG);
 
-  pv->run = TRUE;
-  SYSTEM_DEBUG_SIGNAL_RESET(RNG_ENABLE);
+
+#if !(defined(STM32WBA52xx) || defined(STM32WBA54xx) || defined(STM32WBA55xx) || \
+         defined(STM32WBA5Mxx) || defined(STM32WBA62xx) || defined(STM32WBA63xx) || \
+         defined(STM32WBA64xx) || defined(STM32WBA65xx))
+while((RNG->SR & (1 << 4)));
+#endif
+
+ while(LL_RNG_IsEnabledCondReset(RNG));
+
+ LL_RNG_SetHealthConfig(RNG,RNG_HTCR_NIST_VALUE);
+
+ LL_RNG_Enable(RNG);
+ while(!LL_RNG_IsActiveFlag_DRDY(RNG)); /*wait for data to be ready*/
+
+ pv->run = TRUE;
+ SYSTEM_DEBUG_SIGNAL_RESET(RNG_ENABLE);
 }
  
   
@@ -385,4 +412,66 @@ void HW_RNG_SetPoolThreshold(uint8_t threshold)
   {
     hw_rng_pool_threshold = threshold;
   }
+}
+
+#define HW_RNG_TIMER_DELAY   (10000 - 100)     // debounce for saving in RAM (ms)
+#define HW_RNG_TASK_STACK  (256 * 4)
+
+static TimerHandle_t HW_RNG_timer; // Handle to control the nvm timer
+static osThreadId_t HW_RNG_taskHandle;
+
+
+void HW_RNG_task(void *argument)
+{
+
+  while(1)
+  {
+    // disable RNG
+    HW_RNG_Disable();   
+    osThreadSuspend(HW_RNG_taskHandle);
+  }
+}
+
+static void HW_RNG_TimerStart(void)
+{
+  xTimerReset(HW_RNG_timer, 0);
+}
+
+static void HW_RNG_timerCallback(TimerHandle_t xTimer) 
+{
+  osThreadResume(HW_RNG_taskHandle);  // wake up  task 
+  OTAPP_PRINTF(TAG, "RNG_Timer: resume RNG_task \n");
+}
+
+static void HW_RNG_createTimer(void)
+{
+  HW_RNG_timer = xTimerCreate(
+      "RNG_Timer",            
+      pdMS_TO_TICKS(HW_RNG_TIMER_DELAY),    
+      pdFALSE,                // pdFALSE = One-shot , pdTRUE = Auto-reload 
+      (void *) 0,             // ID timer 
+      HW_RNG_timerCallback        
+  );
+
+  if(HW_RNG_timer == NULL) 
+  {
+    OTAPP_PRINTF(TAG, "RNG_Timer: no more heap \n"); 
+  }
+}
+
+static void HW_RNG_createTask(void)
+{
+  osThreadAttr_t task_attr = {
+    .name = "RNG_task",
+    .priority = osPriorityLow,
+    .stack_size = HW_RNG_TASK_STACK,
+  };
+  HW_RNG_taskHandle = osThreadNew(HW_RNG_task, NULL, &task_attr);
+  osThreadSuspend(HW_RNG_taskHandle);  // START SUSPENDED!
+}
+
+void HW_RNG_initTask(void)
+{
+  HW_RNG_createTask();
+  HW_RNG_createTimer();
 }
