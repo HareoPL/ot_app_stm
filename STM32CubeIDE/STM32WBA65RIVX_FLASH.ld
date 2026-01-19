@@ -45,8 +45,9 @@ _Min_Stack_Size = 0x1000;   /* np. 4 kB na main+ISR */
 /* Memories definition */
 MEMORY
 {
-  RAM    (xrw)    : ORIGIN = 0x20000000,   LENGTH = 512K
-  FLASH    (rx)    : ORIGIN = 0x8000000,   LENGTH = 2048K
+  RAM   (xrw)     : ORIGIN = 0x20000000,  LENGTH = 512K
+  FLASH (rx)      : ORIGIN = 0x8000000,   LENGTH = 2048K - 8K   /* 2MB - 8kB NVM */
+  NVM_KEYS (r)    : ORIGIN = 0x81FE000,   LENGTH = 8K           /* Bank2 Page127 | RM0515, Table 40, page 191 */
 }
 
 /* Sections */
@@ -76,6 +77,15 @@ SECTIONS
     . = ALIGN(4);
     _etext = .;        /* define a global symbols at end of code */
   } >FLASH
+
+  /* ***  .nvm section  *** */
+  .nvm_section (NOLOAD):
+  {
+    . = ALIGN(8);
+    KEEP (*(.nvm_keys))      /* forced presence */
+    KEEP (*(.nvm_keys*))
+    . = ALIGN(8);
+  } >NVM_KEYS
 
   /* Constant data into "FLASH" Rom type memory */
   .rodata :

@@ -1,10 +1,70 @@
-/* USER CODE BEGIN Header */
+/**
+ * @file flash.c
+ * @author Jan Łukaszewicz (pldevluk@gmail.com)
+ * @brief OpenThread Non-Volatile Storage (NVM) implementation for STM32WBA6. Based on ST example.
+ * @version 0.1
+ * @date 31-12-2025
+ * 
+ * @copyright The MIT License (MIT) Copyright (c) 2025 
+ * 
+ * @section NVM_DESIGN NVM Design Overview
+ * 
+ * Implements OpenThread `otPlatSettings` API using dedicated flash page in STM32WBA6.
+ * Thread settings (SRP ECDSA keys, network keys, datasets) stored in **Bank2 Page127**.
+ * 
+ * @subsection FLASH_LAYOUT Flash Memory Layout (RM0515 Table 40)
+ * 
+ * | Flash area    | Bank    | Non-secure Address          | Size    | Name         |
+ * |---------------|---------|-----------------------------|---------|--------------|
+ * | Main memory   | Bank1   | 0x08000000 - 0x080FFFFF     | 1MB     | Pages 0-127  |
+ * | Main memory   | Bank2   | 0x08100000 - 0x081FFFFF     | 1MB     | Pages 1-127  |
+ * | **NVM Area**  |**Bank2**| **0x081FE000 - 0x081FFFFF** | **8kB** | **Page 127** |
+ * 
+ * @subsection LINKER_SECTION Linker Script Configuration
+ * 
+ * Dedicated NVM section in linker script (`STM32WBA65RIVX_FLASH.ld`):
+ * 
+ * ~~~ld
+ * MEMORY
+ * {
+ *   FLASH  (rx) : ORIGIN = 0x08000000, LENGTH = 2040K
+ *   NVM_KEYS(r) : ORIGIN = 0x081FE000, LENGTH = 8K
+ * }
+ * 
+ * .nvm_section (NOLOAD):
+ * {
+ *   . = ALIGN(8);
+ *   KEEP *(.nvm_keys)
+ *   KEEP *(.nvm_keys*)
+ *   . = ALIGN(8);
+ * } >NVM_KEYS
+ * ~~~
+ * 
+ * variable `nvsFlash[]` lands at **0x081FE000** (map file):
+ * ~~~
+ * .nvm_keys      0x081fe000       0x400 ./main.o
+ *                0x081fe000                nvsFlash
+ * ~~~
+ * 
+ * @subsection FLASH_OPS Flash Operations
+ * 
+ * - **Erase**: `HAL_FLASHEx_Erase(Bank2, Page=127, 1 page)` → 8kB
+ * - **Program**: `HAL_FLASH_Program(QUADWORD)` → 128-bit/16B chunks
+ * 
+ * 
+ * @section NOTES Important Notes
+ * 
+ * - NVM **protected** against reflash (Bank2, CubeProgrammer does not touch it)
+ * - **Erase before every writing** (Flash requires it )
+ * - **QUADWORD** = 16B chunks (`i += 16`) for STM32WBA6
+ * - **Wear-leveling**: manual, by erasint the entire page (8kB)
+ */
+
 /**
  ******************************************************************************
   * File Name          : flash.h
   * Description        : OpenThread platform flash header
   ******************************************************************************
-  * @attention
   *
   * <h2><center>&copy; Copyright (c) 2024 STMicroelectronics.
   * All rights reserved.</center></h2>
@@ -16,7 +76,7 @@
   *
   ******************************************************************************
   */
-/* USER CODE END Header */
+
 
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef FLASH_H
@@ -35,6 +95,17 @@ extern "C" {
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
+
+// Keys in range 0x0001-0x000e are reserved for OT_SETTINGS_KEY use.
+// Keys in range 0x0100-0x010A are reserved for ot_app use.
+// Keys in range 0x8000-0xffff are reserved for vendor-specific use.
+#define OT_APP_KEY_MIN = 0x0100,
+#define OT_APP_KEY_MAX = 0x010A,
+#define OT_APP_KEY_RESERVED_MIN_L = 0x0001,
+#define OT_APP_KEY_RESERVED_MAX_L = 0x000e,
+#define OT_APP_KEY_RESERVED_MIN_H = 0x8000,
+#define OT_APP_KEY_RESERVED_MAX_H = 0xffff,
+
 typedef enum{
   SETTINGS_ADDED,
   SETTINGS_REMOVED,
@@ -94,32 +165,15 @@ typedef enum{
 */
 void APP_THREAD_SettingsUpdated(settings_type_t SettingType);
 
+otError APP_THREAD_KeySave(uint16_t aKey, const uint8_t *aValue, uint16_t aValueLength);
+otError APP_THREAD_KeyRead(uint16_t aKey, uint8_t *aValueOut, uint16_t *aValueLengthOut);
+otError APP_THREAD_KeyDelete(uint16_t aKey);
 
 /**
  * @brief return maximal size of setting buffer
 */
 uint32_t GetSettingsBuffer_MaxSize(void);
 
-/**
- * @brief fill setting buffer
- * 
- * @param buf : input buffer to be copied in OT settings
- * @param size : input size of buffer to be copied in OT settings
- * size < GetSettingsBuffer_MaxSize() else OT_ERROR_NO_BUFS
- *
- * FillSettingBuffer() can be used
-*/
-otError FillSettingBuffer(uint8_t* buf, uint32_t size);
-
-/**
- * @brief get setting buffer
- * 
- * @param *size : output current OT settings buffer size
- * @return *uint8_t: output OT settings buffer
- *
- *
-*/
-uint8_t* GetSettingBuffer(uint32_t* size);
 /* USER CODE BEGIN EFP */
 
 /* USER CODE END EFP */
