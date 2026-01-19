@@ -194,16 +194,41 @@ otError otapp_srpClientRefreshService(otInstance *instance)
 
 void otapp_otSrpClientCallback(otError aError, const otSrpClientHostInfo *aHostInfo, const otSrpClientService *aServices, const otSrpClientService *aRemovedServices, void *aContext)
 {
-    if(aError == OT_ERROR_NONE)
-    {
+        if (aHostInfo->mState == OT_SRP_CLIENT_ITEM_STATE_REMOVED)
+        {
+            if (aError == OT_ERROR_NONE || aError == OT_ERROR_NOT_FOUND)
+            {
+                OTAPP_PRINTF(TAG, "SRP: Server cleared. Now registering services...\n");
+                
+                otapp_srpClientSetHostName(otapp_getOpenThreadInstancePtr(), otapp_deviceNameFullGet());
+                // add host address (without this, the SRP SERVER will not known where to direct traffic )
+                otapp_srpClientAddHostAddress(otapp_getOpenThreadInstancePtr());
+
+                // add services
+                otapp_srpClientAddService(otapp_getOpenThreadInstancePtr(), OT_SRP_CLIENT_ITEM_STATE_TO_ADD);
+            }
+        }
+
         if(aHostInfo->mState == OT_SRP_CLIENT_ITEM_STATE_REGISTERED)
         {
-            otapp_srpServiceLeaseCheckTaskInit();   
-            
-            otapp_dnsClientBrowse(otapp_getOpenThreadInstancePtr(), otapp_browseDefaultServiceName);
-           
-        }       
+            if (aError == OT_ERROR_NONE)
+            {
+                otapp_srpServiceLeaseCheckTaskInit();   
+                
+                otapp_dnsClientBrowse(otapp_getOpenThreadInstancePtr(), otapp_browseDefaultServiceName);
+            }
+        }   
+
+    if(aError == OT_ERROR_DUPLICATED)
+    {
+        OTAPP_PRINTF(TAG, "SRP Conflict detected. Removing host to clear server state...\n");
+        // We delete the host on the server so that we can register again
+        // otSrpClientRemoveHostAndServices(otapp_getOpenThreadInstancePtr(), true, true);
+    }else 
+    {
+        // nothing to do 
     }
+
 }
 
 void otapp_srpClientAutoStartCallback(const otSockAddr *aServerSockAddr, void *aContext)
@@ -220,21 +245,34 @@ void otapp_srpClientAutoStartCallback(const otSockAddr *aServerSockAddr, void *a
 
 static void otapp_srpClientInit(otInstance *instance)
 {
+    // 1. stop srp client
     otSrpClientStop(instance);
+
+    // 2. configure host name 
     otapp_srpClientSetHostName(instance, otapp_deviceNameFullGet());
-    otapp_srpClientAddHostAddress(instance);
-    otapp_srpClientAddService(instance, OT_SRP_CLIENT_ITEM_STATE_TO_ADD);
-     
-    if(otSrpClientIsAutoStartModeEnabled(instance))
+    // 3. add current host IP address
+    otapp_srpClientAddHostAddress(instance); 
+
+    // 4. order remove of old entries from SRP server 
+    otError error = otSrpClientRemoveHostAndServices(instance, true, true);
+
+    // 5. auto turn on SRP CLIENT 
+    // thanks to this, when SRP SERVER will be available, SRP CLIENT will send request from queue.
+    if (!otSrpClientIsAutoStartModeEnabled(instance))
     {
-        OTAPP_PRINTF(TAG, "SRP client has already ran\n");
-        return;
-    }else
-    {
-       otSrpClientEnableAutoStartMode(instance, otapp_srpClientAutoStartCallback, NULL); 
+        otSrpClientEnableAutoStartMode(instance, otapp_srpClientAutoStartCallback, NULL);
     }
-    
-    OTAPP_PRINTF(TAG, "SRP client Auto start Enabled \n");
+
+    if (error == OT_ERROR_NONE)
+    {
+        OTAPP_PRINTF(TAG, "SRP: Requesting removal... AutoStart enabled, waiting for otapp_otSrpClientCallback\n");
+    }
+    else if (error == OT_ERROR_ALREADY)
+    {
+        // If it was already clean locally, we just add services. 
+        // AutoStart will take care of the rest (send "Add").
+        otapp_srpClientAddService(instance, OT_SRP_CLIENT_ITEM_STATE_TO_ADD);
+    }
 }
 
 void otapp_srpInit()

@@ -19,10 +19,15 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "cmsis_os2.h"
-#include "ot_app.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "ot_app.h"
+#include "ad_light.h"
+#include "flash.h"
+#include "ot_app_port_nvs.h"
+#include "hw_rng.h"
 
+#define TAG "main "
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -65,8 +70,6 @@ static void MX_GPDMA1_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
-/* USER CODE END 0 */
 
 /**
   * @brief  The application entry point.
@@ -115,8 +118,11 @@ int main(void)
   /* Call init function for freertos objects (in app_freertos.c) */
   MX_FREERTOS_Init();
 
+  HW_RNG_initTask();
+  
   /* Init code for STM32_WPAN */
-  MX_APPE_Init(NULL);
+  MX_APPE_Init(NULL); // ot_app is init in void APP_THREAD_Init( void ) function
+  // ot_app_nvs_test();
 
   /* Start scheduler */
   osKernelStart();

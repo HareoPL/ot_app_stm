@@ -6,8 +6,9 @@
     #define otapp_port_openthread_get_instance() esp_openthread_get_instance()
 
 #elif defined(STM_PLATFORM)
-extern otInstance * PtOpenThreadInstance;
-    #define otapp_port_openthread_get_instance() (PtOpenThreadInstance)
+    #include "app_thread.h"
+    #define otapp_port_openthread_get_instance() APP_THREAD_GetInstance()
+
 #else
     #error "Unsupported platform. Define ESP_PLATFORM or STM_PLATFORM"
 #endif
