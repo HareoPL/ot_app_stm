@@ -24,6 +24,7 @@
 #ifndef APP_THREAD_H
 #define APP_THREAD_H
 
+#include "openthread/instance.h"
 /* Includes ------------------------------------------------------------------*/
 
 /* Exported types ------------------------------------------------------------*/
@@ -93,6 +94,7 @@ typedef enum
 void Thread_Init(void);
 
 void APP_THREAD_Init(void);
+otInstance * APP_THREAD_GetInstance(void);
 void APP_THREAD_ScheduleUART(void);
 void APP_THREAD_Error(uint32_t ErrId, uint32_t ErrCode);
 void APP_THREAD_ProcessAlarm(void *argument);

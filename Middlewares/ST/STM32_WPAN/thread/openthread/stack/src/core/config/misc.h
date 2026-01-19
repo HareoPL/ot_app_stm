@@ -197,7 +197,7 @@
  * The number of message buffers in the buffer pool.
  */
 #ifndef OPENTHREAD_CONFIG_NUM_MESSAGE_BUFFERS
-#define OPENTHREAD_CONFIG_NUM_MESSAGE_BUFFERS 44
+#define OPENTHREAD_CONFIG_NUM_MESSAGE_BUFFERS 64
 #endif
 
 /**

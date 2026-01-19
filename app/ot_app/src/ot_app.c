@@ -155,10 +155,13 @@ void otapp_setDataset_tlv(void)
 {
     otError error = OT_ERROR_NONE;
 
-    error = otDatasetSetActiveTlvs(openThreadInstance, &otapp_dataset_tlv);
-    if (error != OT_ERROR_NONE)
+	if (!otDatasetIsCommissioned(openThreadInstance))
     {
-        OTAPP_PRINTF(TAG, "error: %d\n", error);
+		error = otDatasetSetActiveTlvs(openThreadInstance, &otapp_dataset_tlv);
+		if (error != OT_ERROR_NONE)
+		{
+			OTAPP_PRINTF(TAG, "error: %d\n", error);
+		}
     }
 
     error = otPlatRadioSetCcaEnergyDetectThreshold(openThreadInstance, OTAPP_CCA_THRESHOLD);
@@ -247,9 +250,11 @@ int8_t otapp_init() //app init
 
     openThreadInstance = otapp_port_openthread_get_instance();
     
-    #ifdef ESP_PLATFORM    
-        otapp_cli_init();
-    #endif 
+	#ifdef ESP_PLATFORM
+		otapp_cli_init();
+	#else
+		otapp_network_init();
+	#endif
 
     otSetStateChangedCallback(otapp_getOpenThreadInstancePtr(),otapp_deviceStateChangedCallback, NULL);
     otapp_mutexBuf = xSemaphoreCreateMutex();

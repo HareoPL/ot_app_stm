@@ -6,6 +6,7 @@
     },
     // "C_Cpp.default.compilerPath": "c:\\.Programy\\Arm GNU Toolchain arm-none-eabi\\13.2 Rel1\\bin\\arm-none-eabi-gcc.exe",
     "C_Cpp.errorSquiggles": "disabled",
+    "idf.portWin": "COM4",
     //"cmake.buildDirectory": "${workspaceFolder}/out/App",
     //"cmake.sourceDirectory": "C:/.Code/STM/MyProjects/H750_vsc/src",
     // "cortex-debug.armToolchainPath": "null"

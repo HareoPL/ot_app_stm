@@ -100,7 +100,7 @@
 									<listOptionValue builtIn="false" value="&quot;../..\app\ot_app\inc&quot;"/>
 									<listOptionValue builtIn="false" value="../../app/ot_app/port"/>
 									<listOptionValue builtIn="false" value="../../app/utils"/>
-									<listOptionValue builtIn="false" value="../../app/EmbeddedPrintf"/>
+									<listOptionValue builtIn="false" value="../../app/app_devices/ed_light/inc"/>
 								</option>
 								<inputType id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c.1226179912" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.c.compiler.input.c"/>
 							</tool>
