@@ -155,10 +155,13 @@ void otapp_setDataset_tlv(void)
 {
     otError error = OT_ERROR_NONE;
 
-    error = otDatasetSetActiveTlvs(openThreadInstance, &otapp_dataset_tlv);
-    if (error != OT_ERROR_NONE)
+	if (!otDatasetIsCommissioned(openThreadInstance))
     {
-        OTAPP_PRINTF(TAG, "error: %d\n", error);
+		error = otDatasetSetActiveTlvs(openThreadInstance, &otapp_dataset_tlv);
+		if (error != OT_ERROR_NONE)
+		{
+			OTAPP_PRINTF(TAG, "error: %d\n", error);
+		}
     }
 
     error = otPlatRadioSetCcaEnergyDetectThreshold(openThreadInstance, OTAPP_CCA_THRESHOLD);

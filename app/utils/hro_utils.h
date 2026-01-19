@@ -33,7 +33,7 @@
 #define HRO_LOG_ENABLE
 
 #ifndef UNIT_TEST    
-    #define UTILS_ENABLE_CHECK_RTOS_FREE_STACK_ON_TASKS
+    // #define UTILS_ENABLE_CHECK_RTOS_FREE_STACK_ON_TASKS
     #define PRIVATE static
     #define BREAK_U_TEST
 #else
@@ -45,6 +45,14 @@
 #define HRO_TOOL_PACKED_FIELD   __attribute__((packed))
 #define HRO_TOOL_PACKED_END     __attribute__((packed))
 #define HRO_TOOL_WEAK           __attribute__((weak))
+
+#define HRO_ALIGN_16            __attribute__ ((aligned (16)))
+
+#define HRO_SEC_NVM             __attribute__ ((section (".nvm_keys")))
+#define HRO_SEC_NOINIT          __attribute__ ((section (".noinit")))
+
+#define HRO_SEC_NVM_AL16        __attribute__ ((section (".nvm_keys"))) HRO_ALIGN_16
+#define HRO_SEC_NOINIT_AL16     __attribute__ ((section (".noinit"))) HRO_ALIGN_16
 
 #ifndef NULL
     #define NULL ((void *)0)
