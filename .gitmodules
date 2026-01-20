@@ -1,0 +1,3 @@
+[submodule "app/ot_app_sb"]
+	path = app/ot_app_sb
+	url = https://github.com/HareoPL/ot_app.git
