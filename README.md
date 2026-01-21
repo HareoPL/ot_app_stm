@@ -1,101 +1,153 @@
-## __Thread_Coap_Generic_FreeRTOS Application Description__
+# OTApp - OpenThread Application Framework </br> STM32 Port
 
-How to build Thread application based on Coap messages.
+![Language](https://img.shields.io/badge/language-Embedded%20C-00599C.svg?style=flat&logo=c)
+![Platform](https://img.shields.io/badge/platform-STM32-03234B.svg?style=flat&logo=stmicroelectronics&logoColor=white)
+![Protocol](https://img.shields.io/badge/protocol-OpenThread%20%7C%20CoAP-4caf50.svg)
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![Status](https://img.shields.io/badge/Status-Active_Development-brightgreen.svg?style=flat&logo=github&logoColor=white)
 
-### __Keywords__
+<details><summary><b>🇵🇱 Wersja Polska</b></summary><br>
 
-Connectivity, 802.15.4 protocol, Thread, COAP
+To repozytorium zawiera warstwę abstrakcji sprzętowej (HAL) oraz specyficzne optymalizacje platformowe dla frameworka **[OTApp](https://github.com/HareoPL/ot_app)**, dedykowane dla mikrokontrolerów serii **STM32WBA6**.
 
-### __Hardware and Software environment__
+## 🛠 Specyfikacja Platformy
+- **MCU:** STM32WBA6 (Cortex-M33).
+- **Toolchain:** STM32CubeIDE / GNU Arm Embedded Toolchain.
+- **RTOS:** FreeRTOS (zintegrowany poprzez CMSIS-OS2).
+- **Stos bezprzewodowy:** Middleware STM32WPAN (OpenThread FTD/MTD).
 
-* This example runs on STM32WBA65xx devices.  
+---
 
-* This example has been tested with an STMicroelectronics STM32WBA65RI_Nucleo board and can be easily tailored to any other supported device and development board.  
+## 🚀 Kluczowe Ulepszenia Platformy
 
-### __How to use it?__
+W tym porcie zaimplementowano krytyczne poprawki stabilności i wydajności, których brakuje w standardowych przykładach SDK od producenta:
 
-In order to make the program work, you must do the following:  
- 
-- Connect 2 STM32WBA65xx_Nucleo boards to your PC 
-- Open your preferred toolchain 
-- Rebuild all files and load your image into target memory
-- Run the application   
- 
-**Note:** when LED1, LED2 and LED3 are toggling it is indicating an error has occurred on application. 
+### 💾 Zoptymalizowana pamięć NVM z mechanizmem Wear-Levelingu
+Standardowe implementacje implementacje nie zapisywała ustawień do pamieci trwałej. Ten port zapisuje ustawienia do pamieci FLASH oraz wprowadza inteligentny mechanizm zarządzania pamięcią nieulotną:
+- **Mechanizm Slotów:** Strona Flash (8kB) została logicznie podzielona na bufory. Dane są dopisywane do kolejnych wolnych adresów zamiast nadpisywania tego samego miejsca.
+- **Zwiększona Żywotność:** Dzięki rotacji miejsc zapisu, fizyczna strona Flash zużywa się znacznie wolniej, co teoretycznie zwiększa jej trwałość z bazowych 100k do nawet **400k cykli zapisu**.
+- **Asynchroniczny Zapis:** Wykorzystano **FreeRTOS Timer** (mechanizm debounce) oraz dedykowany zadanie (Task) o niskim priorytecie. Timer budzi zadanie zapisu dopiero po określonym czasie bezczynności, co eliminuje zbędne operacje przy serii szybkich zmian ustawień.
 
-If you want to control this application, you can directly send and retrieve Cli commands connecting an HyperTerminal with the FTDI cable as following :  
+### 🎲 Stabilny sprzętowy generator liczb losowych (HW RNG)
+Rozwiązano problem zawieszania się generatora RNG przy intensywnym korzystaniu ze stosu OpenThread:
+- **Problem:** Oryginalne sterowniki często wymuszały restart RNG po każdym użyciu, co przy dużej liczbie zapytań prowadziło do błędów zegara (Clock Error) i blokowania procesora w pętli `while`.
+- **Rozwiązanie:** Zaimplementowano mechanizm opóźnionego wyłączania za pomocą FreeRTOS. Generator pozostaje aktywny przez krótki czas po ostatnim zapytaniu. Jeśli system poprosi o nową liczbę w tym oknie czasowym, generator jest natychmiast dostępny, co zapobiega błędom synchronizacji i oszczędza energię.
 
-- TX GPIO 17  
-- RX GPIO 18  
- 
-In a Thread network, nodes are split into two forwarding roles: **Router** or **End Device**.    
-The Thread **Leader** is a Router that is responsible for managing the set of Routers in a Thread network.    
-An End Device (or child) communicates primarily with a **single Router**.    
+---
 
-In our Application which uses two devices, one device will act as a Leader (Router) and the other one will act as an End Device(mode child). 
+## 🔌 Konfiguracja Sprzętowa
+Port domyślnie wspiera urządzenia typu `ot_device` w roli **Full Thread Device (FTD)**.
 
-After the reset of the 2 boards, one board will be in Leader mode (**Green LED2 ON**).    
-The other one will be in Child mode (**Red LED3 ON**).  
- 
-Let's name indifferently one board **A** and one board **B**.   
+todo
 
-- press the SW1 Push-Button on board A to send a **COAP command (Non-Confirmable)** from board A to board B.  
-The board B will receive COAP commands to toggle its **blue LED1**.
-- press the SW2 Push-Button on boad A to send a **COAP command (Confirmable)** from board A to board B.  
-The board B will receive COAP commands and send to board A a **Coap Data response** and toggle its **blue LED1**.
+## 🔌 Jak zacząć?
+1. Sklonuj repozytorium wraz z submodułami:
+```bash
+   git clone --recursive [https://github.com/HareoPL/ot_app_stm.git](https://github.com/HareoPL/ot_app_stm.git)
+```
 
-Same COAP commands can be sent from board B to board A.    
- 
-<pre>
-	
-  ___________________________                       ___________________________
-  |  Device A               |                       | Device B                |
-  |_________________________|                       |_________________________|  
-  |                         |                       |                         |
-  |                         |                       |                         |
-  |                SW1 -->  |======> COAP =========>| BLUE LED TOGGLE (ON/OFF)|
-  |                         | Resource "light"      |                         |
-  |                         | Mode: Multicast       |                         |
-  |                         | Type: Non-Confirmable |                         |
-  |                         | Code: Put             |                         |
-  |                         |                       |                         |
-  |                         |                       |                         |
-  |                SW2 -->  |=====> COAP ==========>|-------->                |
-  |                         | Resource "light"      |         |               |
-  |                         | Mode: Multicast       |  CoapRequestHandler()   |
-  |                         | Type: Confirmable     |         |               |
-  |                         | Code: Put             |         |               |
-  |                         |                       |         v               |
-  |                         |                       |  CoapSendDataResponse() |
-  |                         |                       |         |               |
-  |                         |                       |         v               |
-  | CoapDataRespHandler()<--|<===== COAP <==========| <-------                |
-  |                         |                       | BLUE LED TOGGLE (ON/OFF)| 
-  |                         |                       |                         |  
-  ---------------------------                       ---------------------------
-  | Role : Child            |                       | Role : Leader           |
-  |                         |                       |                         |
-  | LED : Red               |                       | LED : Green             |
-  |                         |                       |                         |
-  |_________________________|                       |_________________________|
+2. Zaimportuj projekt do **STM32CubeIDE**.
+3. Skompiluj i wgraj program na płytkę (np. NUCLEO-WBA65).
 
-  
-</pre> 
+## 🔗 Framework i Zasoby
 
-### __Traces__
+Więcej informacji o logice frameworka, API CoAP oraz mechanizmach parowania znajdziesz w głównym projekcie:
 
-* To get the traces you need to connect your Board to the Hyperterminal (through the STLink Virtual COM Port).  
+* **Główne Repozytorium:** 👉 **[github.com/HareoPL/ot_app](https://github.com/HareoPL/ot_app)**
+* **Dokumentacja:** 👉 **[Hareo.pl/otapp](https://hareo.pl/otapp)**
+* **inne platformy**:
+</br> 👉 ESP32-C6: **[ github.com/HareoPL/ot_app_esp](https://github.com/HareoPL/ot_app_esp)**
+</br> 👉 Control Panel (STM32H7 + ESP32-C6 + LCD): **[github.com/HareoPL/ot_app_cp](https://github.com/HareoPL/ot_app_cp)**
 
-* The UART must be configured as follows:  
-<br>
-BaudRate       = 115200 baud</br>
-Word Length    = 8 Bits</br>
-Stop Bit       = 1 bit</br>
-Parity         = none</br>
-Flow control   = none</br>
-Terminal   "Go to the Line" : &lt;LF&gt;  
+## 👨‍💻 Autor i Kontakt
 
+**Jan Łukaszewicz**
 
+* 📧 E-mail: plhareo@gmail.com
+* 🔗 WWW: [hareo.pl](https://hareo.pl/)
 
+---
 
+## ⚖️ Licencja
 
+Ten projekt jest udostępniany na licencji **MIT**.
+
+Należy jednak pamiętać, że port zawiera kod abstrakcji sprzętowej (HAL/LL) oraz middleware od **STMicroelectronics**. Pliki te (szczególnie w folderach sterowników RNG i Flash) zachowują swoje oryginalne licencje producenta:
+
+* **SLA0044** (ST Ultimate Liberty)
+* **BSD-3-Clause**
+
+</details>
+
+## 🇺🇸 English
+
+This repository provides the hardware abstraction layer (HAL) and specific platform optimizations for the **[OTApp Framework](https://github.com/HareoPL/ot_app)** on **STM32WBA6** series microcontrollers.
+
+## 🛠 Platform Specifics
+- **MCU:** STM32WBA6 (Cortex-M33).
+- **Toolchain:** STM32CubeIDE / GNU Arm Embedded Toolchain.
+- **RTOS:** FreeRTOS (integrated via CMSIS-OS2).
+- **Wireless Stack:** STM32WPAN Middleware (OpenThread FTD/MTD).
+
+---
+
+## 🚀 Key Platform Improvements
+
+This port implements critical stability and performance fixes that address limitations found in standard SDK examples:
+
+### 💾 Optimized NVM with Wear-Leveling
+Standard implementations did not save settings to persistent memory. This port saves settings to FLASH memory and introduces an intelligent non-volatile memory management mechanism:
+- **Slot Mechanism:** A single 8kB Flash page is divided into 2kB slots. Data is appended to the next available slot instead of overwriting the same address.
+- **Increased Longevity:** By rotating slots, the physical Flash page wears out 4 times slower, theoretically increasing durability from the standard 100k to **400k write cycles**.
+- **Asynchronous Commits:** Utilizes a **FreeRTOS Timer** (debounce) and a dedicated **low-priority Task**. The timer triggers the actual Flash write only after a period of inactivity, eliminating redundant operations during rapid configuration changes.
+
+### 🎲 Stable HW RNG (Random Number Generator)
+Fixed stability issues of the hardware random number generator during high-intensity requests from the OpenThread stack:
+- **The Problem:** The factory driver disabled the RNG immediately after every use. Under frequent access, this led to clock synchronization issues (Clock Error) and system hangs.
+- **The Solution:** Implemented a **Delayed Disable Strategy** using a FreeRTOS timer and task. The RNG remains active for a short window after the last use. If a new number is requested within this window, the timer resets, avoiding the costly and risky peripheral restart.
+
+---
+
+## 🔌 Hardware Setup (Example: NUCLEO-WBA65)
+The port supports `ot_device` implementation with the following configuration:
+
+todo
+
+## 🔌 Getting Started
+1. Clone the repository with submodules:
+```bash
+   git clone --recursive [https://github.com/HareoPL/ot_app_stm.git](https://github.com/HareoPL/ot_app_stm.git)
+
+```
+
+2. Import the project into **STM32CubeIDE**.
+3. Build and flash using the integrated debugger.
+
+## 🔗 Core Framework & Resources
+
+For detailed documentation on the framework logic, CoAP API, and pairing mechanisms, visit:
+
+* **Main Repository:** 👉 [github.com/HareoPL/ot_app](https://github.com/HareoPL/ot_app)
+* **Documentation:** 👉 [Hareo.pl/otapp](https://hareo.pl/otapp)
+* **Other Platforms:** 
+</br> 👉 ESP32-C6: **[ github.com/HareoPL/ot_app_esp](https://github.com/HareoPL/ot_app_esp)**
+</br> 👉 Control Panel (STM32H7 + ESP32-C6 + LCD): **[github.com/HareoPL/ot_app_cp](https://github.com/HareoPL/ot_app_cp)**
+## 👨‍💻 Author and Contact
+
+**Jan Łukaszewicz**
+
+* 📧 E-mail: plhareo@gmail.com
+* 🔗 WWW: [hareo.pl](https://hareo.pl/)
+
+---
+
+## ⚖️ License
+
+This project is licensed under the **MIT License**.
+
+However, this port includes hardware abstraction code (HAL/LL) and middleware from **STMicroelectronics**. Specific files (notably in the NVM and RNG drivers) maintain their original licenses:
+
+* **SLA0044** (ST Ultimate Liberty)
+* **BSD-3-Clause**
+
+Please refer to individual file headers for the full license texts.
